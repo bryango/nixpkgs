@@ -34,7 +34,7 @@ let
   inherit (builtins) unsafeDiscardStringContext appendContext;
   inherit (lib)
     trace substring stringLength concatStringsSep mapAttrsToList listToAttrs
-    attrValues mapAttrs filter hasAttr attrNames all;
+    attrValues mapAttrs filter hasAttr all;
   inherit (lib.attrsets) mergeAttrsList;
 
   toContextlessString = x: unsafeDiscardStringContext (toString x);
@@ -114,19 +114,20 @@ let
     else
       true) replacements;
 
-  rewriteMemo = mapAttrs (drv: references:
-    let
-      rewrittenReferences =
-        filter (dep: dep != drv && toString rewriteMemo.${dep} != dep)
-        references;
-      rewrites = listToAttrs (map (reference: {
-        name = reference;
-        value = rewriteMemo.${reference};
-      }) rewrittenReferences);
-      # Mind the order of how the three attrsets are merged here.
-      # The order of precedence needs to be "explicitly specified replacements" > "rewrite exclusion (cutoffPackages)" > "rewrite".
-      # So the attrset merge order is the opposite.
-    in rewriteHashes storePathOrKnownDerivationMemo.${drv} rewrites)
+  rewriteMemo =
+    # Mind the order of how the three attrsets are merged here.
+    # The order of precedence needs to be "explicitly specified replacements" > "rewrite exclusion (cutoffPackages)" > "rewrite".
+    # So the attrset merge order is the opposite.
+    mapAttrs (drv: references:
+      let
+        rewrittenReferences =
+          filter (dep: dep != drv && toString rewriteMemo.${dep} != dep)
+          references;
+        rewrites = listToAttrs (map (reference: {
+          name = reference;
+          value = rewriteMemo.${reference};
+        }) rewrittenReferences);
+      in rewriteHashes storePathOrKnownDerivationMemo.${drv} rewrites)
     relevantReferences // listToAttrs (map (drv: {
       name = toContextlessString drv;
       value = storePathOrKnownDerivationMemo.${toContextlessString drv};
