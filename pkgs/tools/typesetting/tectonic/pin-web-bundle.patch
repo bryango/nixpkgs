@@ -1,0 +1,29 @@
+From 96702ba00b7385233719786426b2f1fdffb58487 Mon Sep 17 00:00:00 2001
+From: Bryan Lai <bryanlais@gmail.com>
+Date: Thu, 14 Dec 2023 22:27:13 +0800
+Subject: [PATCH] Fork: pin web bundle for reproducible build
+
+---
+ crates/bundles/src/lib.rs | 9 ++-------
+ 1 file changed, 2 insertions(+), 7 deletions(-)
+
+diff --git a/crates/bundles/src/lib.rs b/crates/bundles/src/lib.rs
+index 6ff8bd0ee..66e0176fa 100644
+--- a/crates/bundles/src/lib.rs
++++ b/crates/bundles/src/lib.rs
+@@ -112,13 +112,8 @@ impl<B: Bundle + ?Sized> Bundle for Box<B> {
+ /// low-level reliability problems and was blocked in China. We now use a custom
+ /// webservice.
+ pub fn get_fallback_bundle_url(format_version: u32) -> String {
+-    // Format version 32 (TeXLive 2021) was when we introduced versioning to the
+-    // URL.
+-    if format_version < 32 {
+-        "https://relay.fullyjustified.net/default_bundle.tar".to_owned()
+-    } else {
+-        format!("https://relay.fullyjustified.net/default_bundle_v{format_version}.tar")
+-    }
++    // nixpkgs: pin web bundle for reproducible build
++    "https://data1.fullyjustified.net/tlextras-2022.0r0.tar".to_owned()
+ }
+ 
+ /// Open the fallback bundle.
