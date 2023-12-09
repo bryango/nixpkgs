@@ -1,3 +1,6 @@
+# This package defines `tectonic-unwrapped`.
+# For `tectonic` wrapped with `biber`, see `wrapper.nix`
+
 { lib
 , stdenv
 , fetchFromGitHub
