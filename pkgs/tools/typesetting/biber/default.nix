@@ -1,13 +1,13 @@
-{ lib, stdenv, fetchurl, perlPackages, shortenPerlShebang, texlive }:
-
-let
-  biberSource = texlive.pkgs.biber.texsource;
-in
+{ lib, stdenv, perlPackages, shortenPerlShebang
+, texlive
+, biberSource ? let inherit (texlive.pkgs.biber) texsource; in {
+    inherit (texsource) pname version meta;
+    src = "${texsource}/source/bibtex/biber/biblatex-biber.tar.gz";
+  }
+}:
 
 perlPackages.buildPerlModule {
-  inherit (biberSource) pname version;
-
-  src = "${biberSource}/source/bibtex/biber/biblatex-biber.tar.gz";
+  inherit (biberSource) pname version src;
 
   buildInputs = with perlPackages; [
     autovivification BusinessISBN BusinessISMN BusinessISSN ConfigAutoConf
@@ -26,11 +26,13 @@ perlPackages.buildPerlModule {
     shortenPerlShebang $out/bin/biber
   '';
 
+  patches = biberSource.patches or [ ];
+
   meta = with lib; {
     description = "Backend for BibLaTeX";
     license = biberSource.meta.license;
     platforms = platforms.unix;
-    maintainers = [ maintainers.ttuegel ];
+    maintainers = biberSource.meta.maintainers or [ maintainers.ttuegel ];
     mainProgram = "biber";
   };
 }
