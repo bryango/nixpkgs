@@ -6684,6 +6684,10 @@ with pkgs;
 
   biber = callPackage ../tools/typesetting/biber { };
 
+  biberVersions = recurseIntoAttrs (
+    callPackage ../tools/typesetting/biber/versions.nix { }
+  );
+
   biber-ms = callPackage ../tools/typesetting/biber-ms { };
 
   biblatex-check = callPackage ../tools/typesetting/biblatex-check { };
