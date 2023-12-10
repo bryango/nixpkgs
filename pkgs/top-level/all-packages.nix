@@ -25338,6 +25338,8 @@ with pkgs;
     harfbuzz = harfbuzzFull;
   };
 
+  tectonic-with-biber = callPackage ../tools/typesetting/tectonic/wrapper.nix { };
+
   tepl = callPackage ../development/libraries/tepl { };
 
   termbench-pro = callPackage ../development/libraries/termbench-pro { fmt = fmt_8; };
