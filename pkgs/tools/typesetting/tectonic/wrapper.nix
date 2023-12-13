@@ -16,7 +16,7 @@ let
 
   meta = tectonic.meta // {
     inherit name;
-    description = "Modernized TeX/LaTeX engine, with biber for bibliography";
+    description = "Tectonic, wrapped with the correct biber version";
     longDescription = ''
       This package wraps tectonic with biber without triggering rebuilds.
       The biber executable is exposed with a version suffix, such as
