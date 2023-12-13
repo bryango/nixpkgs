@@ -18,6 +18,7 @@
       hash = "sha256-Tt2sN2b2NGxcWyZDj5uXNGC8phJwFRiyH72n3yhFCi0=";
     };
     patches = [
+      # Perl 5.38 compatibility
       (fetchpatch {
         url = "https://patch-diff.githubusercontent.com/raw/plk/biber/pull/411.patch";
         hash = "sha256-osgldRVfe3jnMSOMnAMQSB0Ymc1s7J6KtM2ig3c93SE=";
