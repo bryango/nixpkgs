@@ -1,6 +1,7 @@
 { lib
 , stdenv
 , fetchFromGitHub
+, fetchpatch
 , rustPlatform
 , darwin
 , fontconfig
@@ -23,8 +24,20 @@ rustPlatform.buildRustPackage rec {
     sha256 = "sha256-Cd8YzjU5mCA5DmgLBjg8eVRc87chVVIXinJuf8cNw3o=";
   };
 
+  patches = [
+    # allow locked version of the tectonic web bundle for reproducible builds
+    # by specifying the env variable `TECTONIC_WEB_BUNDLE_LOCKED`
+    # upstream PR #1131: https://github.com/tectonic-typesetting/tectonic/pull/1131
+    # this patch should be removed once the upstream PR is merged
+    (fetchpatch {
+      url = "https://github.com/tectonic-typesetting/tectonic/commit/4491480dab6578941f8516dd40563cdc5c5f9ebc.patch";
+      hash = "sha256-lnV4ZJLsAB0LC6PdKNjUreUPDKeD+L5lPod605tQtYo=";
+    })
+  ];
+
   cargoHash = "sha256-1WjZbmZFPB1+QYpjqq5Y+fDkMZNmWJYIxmMFWg7Tiac=";
 
+  # `makeBinaryWrapper` is needed later on for wrapping with biber
   nativeBuildInputs = [ pkg-config makeBinaryWrapper ];
 
   buildInputs = [ icu fontconfig harfbuzz openssl ]
@@ -50,6 +63,6 @@ rustPlatform.buildRustPackage rec {
     changelog = "https://github.com/tectonic-typesetting/tectonic/blob/tectonic@${version}/CHANGELOG.md";
     license = with licenses; [ mit ];
     mainProgram = "tectonic";
-    maintainers = with maintainers; [ lluchs doronbehar ];
+    maintainers = with maintainers; [ lluchs doronbehar bryango ];
   };
 }

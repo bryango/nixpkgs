@@ -25322,7 +25322,7 @@ with pkgs;
 
   tecla = callPackage ../development/libraries/tecla { };
 
-  tectonic = callPackage ../tools/typesetting/tectonic {
+  tectonic = callPackage ../tools/typesetting/tectonic/unwrapped.nix {
     harfbuzz = harfbuzzFull;
   };
 
