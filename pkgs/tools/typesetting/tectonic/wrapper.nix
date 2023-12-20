@@ -1,6 +1,7 @@
 { lib
 , tectonic-unwrapped
 , biber-for-tectonic
+, callPackage
 }:
 
 tectonic-unwrapped.overrideAttrs (prevAttrs: {
@@ -16,6 +17,7 @@ tectonic-unwrapped.overrideAttrs (prevAttrs: {
   passthru = {
     unwrapped = tectonic-unwrapped;
     biber = biber-for-tectonic;
+    tests = callPackage ./tests.nix { };
   };
 
   # tectonic runs biber when it detects it needs to run it, see:
