@@ -3,7 +3,19 @@
 , tectonic-unwrapped
 , biber-for-tectonic
 , makeWrapper
+, callPackage
 }:
+
+let
+
+  # The version locked tectonic web bundle, redirected from:
+  #   https://relay.fullyjustified.net/default_bundle_v33.tar
+  # To check for updates, see:
+  #   https://github.com/tectonic-typesetting/tectonic/blob/master/crates/bundles/src/lib.rs
+  # ... and look up `get_fallback_bundle_url`.
+  TECTONIC_WEB_BUNDLE_LOCKED = "https://data1.fullyjustified.net/tlextras-2022.0r0.tar";
+
+in
 
 symlinkJoin {
   name = "${tectonic-unwrapped.pname}-wrapped-${tectonic-unwrapped.version}";
@@ -14,26 +26,16 @@ symlinkJoin {
   passthru = {
     unwrapped = tectonic-unwrapped;
     biber = biber-for-tectonic;
+    tests = callPackage ./tests.nix { };
   };
 
   # Replace the unwrapped tectonic with the one wrapping it with biber
   postBuild = ''
     rm $out/bin/{tectonic,nextonic}
   ''
-    # Ideally, we would have liked to also pin the version of the online TeX
-    # bundle that Tectonic's developer distribute, so that the `biber` version
-    # and the `biblatex` version distributed from there are compatible.
-    # However, that is not currently possible, due to lack of upstream support
-    # for specifying this in runtime, there were 2 suggestions sent upstream
-    # that suggested a way of improving the situation:
-    #
-    # - https://github.com/tectonic-typesetting/tectonic/pull/1132
-    # - https://github.com/tectonic-typesetting/tectonic/pull/1131
-    #
-    # The 1st suggestion seems more promising as it'd allow us to simply use
-    # makeWrapper's --add-flags option. However, the PR linked above is not
-    # complete, and as of currently, upstream hasn't even reviewed it, or
-    # commented on the idea.
+    # Pin the version of the online TeX bundle that Tectonic's developer
+    # distribute, so that the `biber` version and the `biblatex` version
+    # distributed from there are compatible.
     #
     # Note also that upstream has announced that they will put less time and
     # energy for the project:
@@ -45,7 +47,8 @@ symlinkJoin {
     # won't require a higher version of biber.
   + ''
     makeWrapper ${lib.getBin tectonic-unwrapped}/bin/tectonic $out/bin/tectonic \
-      --prefix PATH : "${lib.getBin biber-for-tectonic}/bin"
+      --prefix PATH : "${lib.getBin biber-for-tectonic}/bin" \
+      --add-flags "--web-bundle ${TECTONIC_WEB_BUNDLE_LOCKED}"
     ln -s $out/bin/tectonic $out/bin/nextonic
   '';
 
