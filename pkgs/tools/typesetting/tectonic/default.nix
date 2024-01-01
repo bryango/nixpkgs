@@ -9,13 +9,13 @@
 { lib
 , stdenv
 , fetchFromGitHub
+, fetchpatch
 , rustPlatform
 , darwin
 , fontconfig
 , harfbuzz
 , openssl
 , pkg-config
-, makeBinaryWrapper
 , icu
 }:
 
