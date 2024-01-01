@@ -9,13 +9,13 @@
 { lib
 , stdenv
 , fetchFromGitHub
+, fetchpatch
 , rustPlatform
 , darwin
 , fontconfig
 , harfbuzz
 , openssl
 , pkg-config
-, makeBinaryWrapper
 , icu
 }:
 
@@ -30,6 +30,20 @@ rustPlatform.buildRustPackage rec {
     fetchSubmodules = true;
     sha256 = "sha256-Cd8YzjU5mCA5DmgLBjg8eVRc87chVVIXinJuf8cNw3o=";
   };
+
+  patches = [
+    /*
+      Provides a consistent `--web-bundle` option across the CLIs. This enables
+      a version lock of the tectonic web bundle for reproducible builds by
+      specifying a default `--web-bundle` flag, which can be overridden as
+      needed. This patch should be removed once the upstream PR is merged:
+        https://github.com/tectonic-typesetting/tectonic/pull/1132
+    */
+    (fetchpatch {
+      url = "https://patch-diff.githubusercontent.com/raw/tectonic-typesetting/tectonic/pull/1132.patch";
+      hash = lib.fakeHash;
+    })
+  ];
 
   cargoHash = "sha256-1WjZbmZFPB1+QYpjqq5Y+fDkMZNmWJYIxmMFWg7Tiac=";
 
