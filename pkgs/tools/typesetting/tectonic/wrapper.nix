@@ -3,6 +3,7 @@
 , tectonic-unwrapped
 , biber-for-tectonic
 , makeWrapper
+, callPackage
 }:
 
 let
@@ -25,6 +26,7 @@ symlinkJoin {
   passthru = {
     unwrapped = tectonic-unwrapped;
     biber = biber-for-tectonic;
+    tests = callPackage ./tests.nix { };
   };
 
   # Replace the unwrapped tectonic with the one wrapping it with biber
