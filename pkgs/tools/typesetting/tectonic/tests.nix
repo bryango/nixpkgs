@@ -1,0 +1,87 @@
+# This package provides `tectonic.passthru.tests`,
+# which requires internet access.
+
+{ lib
+, fetchFromGitHub
+, runCommand
+, tectonic
+, curl
+, cacert
+, emptyFile
+}:
+
+let
+  /*
+    Currently, the test files are only fully available from the `dev` branch of
+    `biber`. When https://github.com/plk/biber/pull/467 is eventually released,
+    we can obtain the test files from `texlive.pkgs.biber.texsource`. For now,
+    i.e. biber<=2.19, we fetch the test files directly from GitHub.
+  */
+  biber-dev-source = fetchFromGitHub {
+    owner = "plk";
+    repo = "biber";
+    rev = "dev";
+    hash = "sha256-GfNV4wbRXHn5qCYhrf3C9JPP1ArLAVSrJF+3iIJmYPI=";
+  };
+  testfiles = "${biber-dev-source}/testfiles";
+
+  noNetNotice = builtins.toFile "tectonic-offline-notice" ''
+    # To fetch tectonic's web bundle, the tests require internet access,
+    # which is not available in the current environment.
+  '';
+  # `cacert` is required for tls connections
+  buildInputs = [ curl cacert tectonic ];
+  checkInternet = ''
+    if curl --head "bing.com"; then
+      set -e # continue to the tests defined below, fail on error
+    else
+      cat "${noNetNotice}"
+      cp "${emptyFile}" "$out"
+      exit # bail out gracefully when there is no internet, do not panic
+    fi
+  '';
+
+  fixedOutputTest = name: script: runCommand
+    /*
+      Introduce dependence on `tectonic` in the test package name.
+      Note that adding `tectonic` to `buildInputs` is not enough to trigger
+      rebuilds for a fixed-output derivation. One must update its name or
+      output hash to induce a rebuild. This behavior is exactly the same as a
+      standard nixpkgs "fetcher" such as `fetchurl`.
+    */
+    "test-${lib.removePrefix "${builtins.storeDir}/" tectonic.outPath}-${name}"
+    {
+      /*
+        Make a fixed-output derivation, return an `emptyFile` with fixed hash.
+        These derivations are allowed to access the internet from within a
+        sandbox, which allows us to test the automatic download of resource
+        files in tectonic, as a side effect. The `tectonic.outPath` is included
+        in `name` to induce rebuild of this fixed-output derivation whenever
+        the `tectonic` derivation is updated.
+      */
+      inherit (emptyFile)
+        outputHashAlgo
+        outputHashMode
+        outputHash
+        ;
+      preferLocalBuild = true;
+      allowSubstitutes = false;
+      inherit buildInputs;
+    }
+    ''
+      ${checkInternet}
+      ${script}
+      cp "${emptyFile}" "$out"
+    '';
+
+in
+lib.mapAttrs fixedOutputTest {
+  biber = ''
+    # import the test files
+    cp "${testfiles}"/* .
+
+    # tectonic caches in the $HOME directory, so set it to $PWD
+    export HOME=$PWD
+    tectonic -X compile ./test.tex
+  '';
+}
