@@ -84,4 +84,9 @@ lib.mapAttrs networkRequiringTestPkg {
     export HOME=$PWD
     tectonic -X compile ./test.tex
   '';
+
+  workspace = ''
+    tectonic -X new
+    cat Tectonic.toml | grep "${tectonic.bundle.url}"
+  '';
 }
