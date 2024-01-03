@@ -31,7 +31,7 @@ let
     # which is not available in the current environment.
   '';
   # `cacert` is required for tls connections
-  buildInputs = [ curl cacert tectonic ];
+  nativeBuildInputs = [ curl cacert tectonic ];
   checkInternet = ''
     if curl --head "bing.com"; then
       set -e # continue to the tests defined below, fail on error
@@ -42,7 +42,7 @@ let
     fi
   '';
 
-  fixedOutputTest = name: script: runCommand
+  networkRequiringTestPkg = name: script: runCommand
     /*
       Introduce dependence on `tectonic` in the test package name.
       Note that adding `tectonic` to `buildInputs` is not enough to trigger
@@ -75,7 +75,7 @@ let
     '';
 
 in
-lib.mapAttrs fixedOutputTest {
+lib.mapAttrs networkRequiringTestPkg {
   biber = ''
     # import the test files
     cp "${testfiles}"/* .
