@@ -65,7 +65,6 @@ let
         outputHashMode
         outputHash
         ;
-      preferLocalBuild = true;
       allowSubstitutes = false;
       inherit nativeBuildInputs;
     }
