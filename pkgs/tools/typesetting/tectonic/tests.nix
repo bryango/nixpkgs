@@ -67,7 +67,7 @@ let
         ;
       preferLocalBuild = true;
       allowSubstitutes = false;
-      inherit buildInputs;
+      inherit nativeBuildInputs;
     }
     ''
       ${checkInternet}
