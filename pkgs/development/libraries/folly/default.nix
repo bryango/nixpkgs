@@ -4,7 +4,6 @@
 , boost
 , cmake
 , double-conversion
-, fetchpatch
 , fmt_8
 , gflags
 , glog
@@ -67,7 +66,7 @@ stdenv.mkDerivation rec {
   ];
 
   postFixup = ''
-    substituteInPlace "$out"/lib/pkgconfig/libfolly.pc \
+    substituteInPlace "$dev"/lib/pkgconfig/libfolly.pc \
       --replace '=''${prefix}//' '=/' \
       --replace '=''${exec_prefix}//' '=/'
   '';
@@ -87,4 +86,7 @@ stdenv.mkDerivation rec {
     platforms = [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" "aarch64-linux" ];
     maintainers = with maintainers; [ abbradar pierreis ];
   };
+
+  # split outputs to reduce downstream closure sizes
+  outputs = [ "out" "dev" ];
 }
