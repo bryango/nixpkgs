@@ -1,5 +1,17 @@
-{ pkgs }:
-rec {
+{ lib
+, buildPackages
+}:
+
+let
+  # rudimentary support for cross-compiling
+  # see: https://github.com/NixOS/nixpkgs/pull/279487#discussion_r1444449726
+  inherit (buildPackages)
+    mktemp
+    rsync
+    ;
+in
+
+{
   /* Prepare a derivation for local builds.
     *
     * This function prepares checkpoint builds by provinding,
@@ -51,19 +63,23 @@ rec {
     *   checkpointArtifacts = prepareCheckpointBuild drv
     * in mkCheckpointBuild drv checkpointArtifacts
   */
-  mkCheckpointBuild = drv: previousBuildArtifacts: drv.overrideAttrs (old: {
+  mkCheckpointBuild = drv: checkpointArtifacts: drv.overrideAttrs (old: {
     # The actual checkpoint build phase.
     # We compare the changed sources from a previous build with the current and create a patch
     # Afterwards we clean the build directory to copy the previous output files (Including the sources)
     # The source difference patch is applied to get the latest changes again to allow short build times.
     preBuild = (old.preBuild or "") + ''
       set +e
-      diff -ur ${previousBuildArtifacts}/sources ./ > sourceDifference.patch
+      sourceDifferencePatchFile=$(${mktemp}/bin/mktemp)
+      diff -ur ${checkpointArtifacts}/sources ./ > "$sourceDifferencePatchFile"
       set -e
-      shopt -s extglob dotglob
-      rm -r !("sourceDifference.patch")
-      ${pkgs.rsync}/bin/rsync -cutU --chown=$USER:$USER --chmod=+w -r ${previousBuildArtifacts}/outputs/* .
-      patch -p 1 -i sourceDifference.patch
+      shopt -s dotglob
+      rm -r *
+      ${rsync}/bin/rsync \
+        --checksum --times --atimes --chown=$USER:$USER --chmod=+w \
+        -r ${checkpointArtifacts}/outputs/ .
+      patch -p 1 -i "$sourceDifferencePatchFile"
+      rm "$sourceDifferencePatchFile"
     '';
   });
 
