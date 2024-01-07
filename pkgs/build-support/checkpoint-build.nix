@@ -21,7 +21,7 @@ rec {
     outputs = [ "out" ];
     name = drv.name + "-checkpointArtifacts";
     # To determine differences between the state of the build directory
-    # from an earlier build and  a later one we store the state of the build
+    # from an earlier build and a later one we store the state of the build
     # directory before build, but after patch phases.
     # This way, the same derivation can be used multiple times and only changes are detected.
     # Additionally Removed files are handled correctly in later builds.
@@ -30,11 +30,11 @@ rec {
       cp -r ./* $out/sources/
     '';
 
-    # After the build the build directory is copied again
+    # After the build, the build directory is copied again
     # to get the output files.
     # We copy the complete build folder, to take care for
-    # Build tools, building in the source directory, instead of
-    # having a build root directory, e.G the Linux kernel.
+    # build tools, building in the source directory, instead of
+    # having a build root directory, such as the Linux kernel.
     installPhase = ''
       runHook preCheckpointInstall
       mkdir -p $out/outputs

@@ -2,7 +2,7 @@
 
 `pkgs.checkpointBuildTools` provides a way to build derivations incrementally. It consists of two functions to make checkpoint builds using Nix possible.
 
-For hermeticity, Nix derivations do not allow any state to carry over between builds, making a transparent incremental build within a derivation impossible.
+For hermeticity, Nix derivations do not allow any state to be carried over between builds, making a transparent incremental build within a derivation impossible.
 
 However, we can tell Nix explicitly what the previous build state was, by representing that previous state as a derivation output. This allows the passed build state to be used for an incremental build.
 
