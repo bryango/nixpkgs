@@ -1,4 +1,6 @@
-{ pkgs }:
+{ lib
+, rsync
+}:
 rec {
   /* Prepare a derivation for local builds.
     *
@@ -51,23 +53,24 @@ rec {
     *   checkpointArtifacts = prepareCheckpointBuild drv
     * in mkCheckpointBuild drv checkpointArtifacts
   */
-  mkCheckpointBuild = drv: previousBuildArtifacts: drv.overrideAttrs (old: {
+  mkCheckpointBuild = drv: checkpointArtifacts: drv.overrideAttrs (old: {
     # The actual checkpoint build phase.
     # We compare the changed sources from a previous build with the current and create a patch
     # Afterwards we clean the build directory to copy the previous output files (Including the sources)
     # The source difference patch is applied to get the latest changes again to allow short build times.
     preBuild = (old.preBuild or "") + ''
-      set +e
-      diff -ur ${previousBuildArtifacts}/sources ./ > sourceDifference.patch
-      set -e
-      shopt -s extglob dotglob
-      rm -r !("sourceDifference.patch")
-      ${pkgs.rsync}/bin/rsync -cutU --chown=$USER:$USER --chmod=+w -r ${previousBuildArtifacts}/outputs/* .
+      {
+        set +e
+        diff -ur ${checkpointArtifacts}/sources ./
+        set -e
+        rm -r *
+      } > sourceDifference.patch
+      ${rsync}/bin/rsync -cutU --chown=$USER:$USER --chmod=+w -r ${checkpointArtifacts}/outputs/* .
       patch -p 1 -i sourceDifference.patch
     '';
   });
 
-  mkCheckpointedBuild = pkgs.lib.warn
+  mkCheckpointedBuild = lib.warn
     "`mkCheckpointedBuild` is deprecated, use `mkCheckpointBuild` instead!"
     mkCheckpointBuild;
 }
