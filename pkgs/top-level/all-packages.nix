@@ -1388,6 +1388,8 @@ with pkgs;
     cutoffPackages = [ newDependency ];
   };
 
+  replaceDirectDependencies = callPackage ../build-support/replace-direct-dependencies.nix { };
+
   nukeReferences = callPackage ../build-support/nuke-references {
     inherit (darwin) signingUtils;
   };
