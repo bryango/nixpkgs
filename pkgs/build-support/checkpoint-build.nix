@@ -70,17 +70,37 @@ rec {
     # Afterwards we clean the build directory and copy the previous output files (including the sources).
     # The source difference patch is then applied to get the latest changes again to allow short build times.
     preBuild = (old.preBuild or "") + ''
-      set +e
-      sourceDifferencePatchFile=$(${mktemp}/bin/mktemp)
-      diff -ur ${checkpointArtifacts}/sources ./ > "$sourceDifferencePatchFile"
       set -e
+
+      ## handle removed files:
+      sourcePatch=$(${mktemp}/bin/mktemp)
+      diff -ur ${checkpointArtifacts}/sources ./ > "$sourcePatch" || true
+
+      ## handle binaries:
+      newSourceBackup=$(${mktemp}/bin/mktemp -d)
       shopt -s dotglob
-      rm -r *
+      mv ./* "$newSourceBackup"
+
+      ## clean up, do not panic when there is nothing left (expected)
+      rm -r * || true
+
+      ## layer 0: artifacts
       ${rsync}/bin/rsync \
         --checksum --times --atimes --chown=$USER:$USER --chmod=+w \
         -r ${checkpointArtifacts}/outputs/ .
-      patch -p 1 -i "$sourceDifferencePatchFile"
-      rm "$sourceDifferencePatchFile"
+
+      ## layer 1: handle removed files: patch source texts
+      patch -p 1 -i "$sourcePatch" || true
+      ## ... do not panic when its unsuccessful (remedied immediately)
+
+      ## layer 2: handle binaries: overlay the new source
+      ${rsync}/bin/rsync \
+        --checksum --times --atimes --chown=$USER:$USER --chmod=+w \
+        -r "$newSourceBackup"/ .
+
+      ## clean up
+      rm "$sourcePatch"
+      rm -rf "$newSourceBackup"
     '';
   });
 
