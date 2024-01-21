@@ -9,6 +9,33 @@ let
     mktemp
     rsync
     ;
+
+  /**
+    Run the hook given by `hookName` in `preBuild`, and make sure that it is
+    only ran once. In other words, if the hook is already called in `preBuild`,
+    do not call it again.
+
+    This is used to improve composibility of the `{prepare,mk}CheckpointBuild`
+    commands.
+
+    # Type
+    ```
+    preBuildAppendOnlyOnce :: AttrSet -> String -> String
+    ```
+
+    # Arguments
+    - [old] Previous attrset of a derivation, before overriding
+    - [hookName] Name of the hook, invoked by `runHook ${hookName}`
+  */
+  preBuildAppendOnlyOnce = old: hookName:
+    let
+      preBuild = old.preBuild or "";
+      hookCmd = "runHook ${hookName}";
+    in
+    preBuild + (lib.optionalString (!lib.hasInfix hookCmd preBuild) ''
+      ${hookCmd}
+    '');
+
 in
 
 rec {
@@ -38,7 +65,8 @@ rec {
     # directory before build, but after patch phases.
     # This way, the same derivation can be used multiple times and only changes are detected.
     # Additionally, removed files are handled correctly in later builds.
-    preBuild = (old.preBuild or "") + ''
+    preBuild = preBuildAppendOnlyOnce old "addCheckpointSource";
+    addCheckpointSource = ''
       mkdir -p $out/sources
       { shopt -s dotglob; cp -r ./* $out/sources/; }
     '';
@@ -69,7 +97,8 @@ rec {
     # We compare the changed sources from a previous build with the current and create a patch.
     # Afterwards we clean the build directory and copy the previous output files (including the sources).
     # The source difference patch is then applied to get the latest changes again to allow short build times.
-    preBuild = (old.preBuild or "") + ''
+    preBuild = preBuildAppendOnlyOnce old "preCheckpointBuild";
+    preCheckpointBuild = ''
       set -e
       sourceDifferencePatchFile=$(${mktemp}/bin/mktemp)
       diff -ur ${checkpointArtifacts}/sources ./ > "$sourceDifferencePatchFile" || true
