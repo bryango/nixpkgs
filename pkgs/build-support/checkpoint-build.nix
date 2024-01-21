@@ -69,7 +69,16 @@ rec {
     # We compare the changed sources from a previous build with the current and create a patch.
     # Afterwards we clean the build directory and copy the previous output files (including the sources).
     # The source difference patch is then applied to get the latest changes again to allow short build times.
-    preBuild = (old.preBuild or "") + ''
+    preBuild =
+      let
+        preBuild = old.preBuild or "";
+        hookCmd = "runHook preCheckpointBuild";
+      in
+      preBuild + (lib.optionalString (!lib.hasInfix hookCmd preBuild) ''
+        ${hookCmd}
+      '');
+
+    preCheckpointBuild = ''
       set -e
       sourceDifferencePatchFile=$(${mktemp}/bin/mktemp)
       diff -ur ${checkpointArtifacts}/sources ./ > "$sourceDifferencePatchFile" || true
