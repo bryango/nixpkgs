@@ -40,7 +40,7 @@ rec {
     # Additionally, removed files are handled correctly in later builds.
     preBuild = (old.preBuild or "") + ''
       mkdir -p $out/sources
-      cp -r ./* $out/sources/
+      { shopt -s dotglob; cp -r ./* $out/sources/; }
     '';
 
     # After the build, the build directory is copied again
@@ -51,7 +51,7 @@ rec {
     installPhase = ''
       runHook preCheckpointInstall
       mkdir -p $out/outputs
-      cp -r ./* $out/outputs/
+      { shopt -s dotglob; cp -r ./* $out/outputs/; }
       runHook postCheckpointInstall
     '';
   });
@@ -70,16 +70,17 @@ rec {
     # Afterwards we clean the build directory and copy the previous output files (including the sources).
     # The source difference patch is then applied to get the latest changes again to allow short build times.
     preBuild = (old.preBuild or "") + ''
-      set +e
-      sourceDifferencePatchFile=$(${mktemp}/bin/mktemp)
-      diff -ur ${checkpointArtifacts}/sources ./ > "$sourceDifferencePatchFile"
       set -e
-      shopt -s dotglob
-      rm -r *
+      sourceDifferencePatchFile=$(${mktemp}/bin/mktemp)
+      diff -ur ${checkpointArtifacts}/sources ./ > "$sourceDifferencePatchFile" || true
+      { shopt -s dotglob; rm -r ./*; } || true
+
       ${rsync}/bin/rsync \
-        --checksum --times --atimes --chown=$USER:$USER --chmod=+w \
+        --checksum --times --atimes --chmod=+w \
         -r ${checkpointArtifacts}/outputs/ .
-      patch -p 1 -i "$sourceDifferencePatchFile"
+      patch -p 1 -i "$sourceDifferencePatchFile" || echo "$sourcePatch"
+      ## ... do not panic when it's unsuccessful
+      ## ... this happens when the source is unchanged
       rm "$sourceDifferencePatchFile"
     '';
   });
