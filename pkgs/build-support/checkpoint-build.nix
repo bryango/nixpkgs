@@ -40,6 +40,7 @@ rec {
     # Additionally, removed files are handled correctly in later builds.
     preBuild = (old.preBuild or "") + ''
       mkdir -p $out/sources
+      shopt -s dotglob
       cp -r ./* $out/sources/
     '';
 
@@ -51,6 +52,7 @@ rec {
     installPhase = ''
       runHook preCheckpointInstall
       mkdir -p $out/outputs
+      shopt -s dotglob
       cp -r ./* $out/outputs/
       runHook postCheckpointInstall
     '';
@@ -65,6 +67,14 @@ rec {
     * in mkCheckpointBuild drv checkpointArtifacts
   */
   mkCheckpointBuild = drv: checkpointArtifacts: drv.overrideAttrs (old: {
+
+    postPatch = (old.postPatch or "") + ''
+      ## handle binaries:
+      newSourceBackup=$(${mktemp}/bin/mktemp -d)
+      shopt -s dotglob
+      cp -r ./* "$newSourceBackup"
+    '';
+
     # The actual checkpoint build phase.
     # We compare the changed sources from a previous build with the current and create a patch.
     # Afterwards we clean the build directory and copy the previous output files (including the sources).
@@ -76,26 +86,23 @@ rec {
       sourcePatch=$(${mktemp}/bin/mktemp)
       diff -ur ${checkpointArtifacts}/sources ./ > "$sourcePatch" || true
 
-      ## handle binaries:
-      newSourceBackup=$(${mktemp}/bin/mktemp -d)
-      shopt -s dotglob
-      mv ./* "$newSourceBackup"
-
       ## clean up, do not panic when there is nothing left (expected)
-      rm -r * || true
+      shopt -s dotglob
+      rm -r ./* || true
 
       ## layer 0: artifacts
       ${rsync}/bin/rsync \
-        --checksum --times --atimes --chown=$USER:$USER --chmod=+w \
+        --checksum --times --atimes --chmod=+w \
         -r ${checkpointArtifacts}/outputs/ .
 
       ## layer 1: handle removed files: patch source texts
+      echo "$sourcePatch"
       patch -p 1 -i "$sourcePatch" || true
       ## ... do not panic when its unsuccessful (remedied immediately)
 
       ## layer 2: handle binaries: overlay the new source
       ${rsync}/bin/rsync \
-        --checksum --times --atimes --chown=$USER:$USER --chmod=+w \
+        --checksum --times --atimes --chmod=+w \
         -r "$newSourceBackup"/ .
 
       ## clean up
