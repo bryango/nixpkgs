@@ -37,7 +37,9 @@ stdenv.mkDerivation (finalAttrs: {
   passthru = {
     tests = {
       /** `python3Packages.levenshtein` crucially depends on `rapidfuzz-cpp` */
-      levenshtein = python3Packages.levenshtein;
+      levenshtein = python3Packages.levenshtein.override {
+        rapidfuzz-cpp = finalAttrs.finalPackage;
+      };
     };
   };
 
