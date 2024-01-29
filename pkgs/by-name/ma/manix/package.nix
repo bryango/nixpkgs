@@ -3,18 +3,18 @@
 , fetchFromGitHub
 }:
 
-rustPlatform.buildRustPackage (finalAttrs: {
+rustPlatform.buildRustPackage rec {
   pname = "manix";
   version = "0.8.0";
 
   src = fetchFromGitHub {
     owner = "nix-community";
     repo = "manix";
-    rev = "v${finalAttrs.version}";
+    rev = "v${version}";
     hash = "sha256-b/3NvY+puffiQFCQuhRMe81x2wm3vR01MR3iwe/gJkw=";
   };
 
-  cargoHash = "sha256-4qyFVVIlJXgLnkp+Ln4uMlY0BBl8t1na67rSM2iIoEA=";
+  cargoHash = "sha256-45cb0yO/ypGLcvEgPOkN6Py99yqK09xnCmMOLOOYYSA=";
 
   meta = with lib; {
     description = "A fast CLI documentation searcher for Nix";
@@ -23,4 +23,4 @@ rustPlatform.buildRustPackage (finalAttrs: {
     maintainers = with maintainers; [ iogamaster lecoqjacob ];
     mainProgram = "manix";
   };
-})
+}
