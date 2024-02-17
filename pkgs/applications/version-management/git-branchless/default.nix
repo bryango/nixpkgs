@@ -51,7 +51,7 @@ rustPlatform.buildRustPackage rec {
     libiconv
   ];
 
-  postInstall = ''
+  postInstall = lib.optionalString (with stdenv; buildPlatform.canExecute hostPlatform) ''
     $out/bin/git-branchless install-man-pages $out/share/man
   '';
 
@@ -71,6 +71,6 @@ rustPlatform.buildRustPackage rec {
     homepage = "https://github.com/arxanas/git-branchless";
     license = licenses.gpl2Only;
     mainProgram = "git-branchless";
-    maintainers = with maintainers; [ nh2 hmenke ];
+    maintainers = with maintainers; [ nh2 hmenke bryango ];
   };
 }
