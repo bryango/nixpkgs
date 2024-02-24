@@ -1377,7 +1377,7 @@ with pkgs;
 
   substituteAllFiles = callPackage ../build-support/substitute-files/substitute-all-files.nix { };
 
-  replaceDependency = callPackage ../build-support/replace-dependency.nix { };
+  replaceDependency = callPackage ../build-support/replace-dependencies.nix { };
 
   nukeReferences = callPackage ../build-support/nuke-references {
     inherit (darwin) signingUtils;
