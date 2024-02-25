@@ -1,29 +1,52 @@
 { runCommandLocal, nix, lib }:
 
-# Replace a single dependency in the requisites tree of drv, propagating
-# the change all the way up the tree, without a full rebuild. This can be
+# Replace some dependencies in the requisites tree of drv, propagating
+# the change all the way up the tree, even within other replacements, without a full rebuild. This can be
 # useful, for example, to patch a security hole in libc and still use your
 # system safely without rebuilding the world. This should be a short term
-# solution, as soon as a rebuild can be done the properly rebuild derivation
-# should be used. The old dependency and new dependency MUST have the same-length
+# solution, as soon as a rebuild can be done the properly rebuilt derivation
+# should be used. Each old dependency and the corresponding new dependency MUST have the same-length
 # name, and ideally should have close-to-identical directory layout.
 #
-# Example: safeFirefox = replaceDependency {
+# Example: safeFirefox = replaceDependencies {
 #   drv = firefox;
-#   oldDependency = glibc;
-#   newDependency = overrideDerivation glibc (attrs: {
-#     patches  = attrs.patches ++ [ ./fix-glibc-hole.patch ];
-#   });
+#   replacements = [
+#     {
+#       oldDependency = glibc;
+#       newDependency = glibc.overrideAttrs (oldAttrs: {
+#         patches = oldAttrs.patches ++ [ ./fix-glibc-hole.patch ];
+#       });
+#     }
+#     {
+#       oldDependency = libwebp;
+#       newDependency = libwebp.overrideAttrs (oldAttrs: {
+#         patches = oldAttrs.patches ++ [ ./fix-libwebp-hole.patch ];
+#       });
+#     }
+#   ];
 # };
-# This will rebuild glibc with your security patch, then copy over firefox
+# This will first rebuild glibc and libwebp with your security patches. Then it copies them over firefox
 # (and all of its dependencies) without rebuilding further.
-{ drv, oldDependency, newDependency, verbose ? true }:
-
-with lib;
+# In particular, the glibc dependency of libwebp will be replaced by the patched version as well.
+#
+# In rare cases, it is possible for the replacement process to cause breakage (for example due to checksum mismatch).
+# The cutoffPackages argument can be used to exempt the problematic packages from the replacement process.
+{ drv, replacements, cutoffPackages ? [ ], verbose ? true }:
 
 let
-  warn = if verbose then builtins.trace else (x: y: y);
-  references = import (runCommandLocal "references.nix" { exportReferencesGraph = [ "graph" drv ]; } ''
+  # The code depends on these undocumented builtins to manage string contexts:
+  inherit (builtins) unsafeDiscardStringContext appendContext;
+  # ... see github.com/NixOS/nix: src/libexpr/primops/context.cc
+  # ... for the relevant implementations.
+
+  inherit (lib)
+    trace substring stringLength concatStringsSep mapAttrsToList listToAttrs
+    attrValues mapAttrs filter hasAttr all;
+  inherit (lib.attrsets) mergeAttrsList;
+
+  warn = if verbose then trace else (x: y: y);
+
+  referencesOf = drv: import (runCommandLocal "references.nix" { exportReferencesGraph = [ "graph" drv ]; } ''
     (echo {
     while read path
     do
@@ -35,7 +58,7 @@ let
             read ref_path
             if [ "$ref_path" != "$path" ]
             then
-                echo "    (builtins.storePath (/. + \"$ref_path\"))"
+                echo "    \"$ref_path\""
             fi
             count=$(($count - 1))
         done
@@ -44,40 +67,82 @@ let
     echo }) > $out
   '').outPath;
 
-  discard = builtins.unsafeDiscardStringContext;
-
-  oldStorepath = builtins.storePath (discard (toString oldDependency));
-
-  referencesOf = drv: references.${discard (toString drv)};
-
-  dependsOnOldMemo = listToAttrs (map
-    (drv: { name = discard (toString drv);
-            value = elem oldStorepath (referencesOf drv) ||
-                    any dependsOnOld (referencesOf drv);
-          }) (builtins.attrNames references));
-
-  dependsOnOld = drv: dependsOnOldMemo.${discard (toString drv)};
+  discard = x: unsafeDiscardStringContext (toString x);
 
   drvName = drv:
-    discard (substring 33 (stringLength (builtins.baseNameOf drv)) (builtins.baseNameOf drv));
+    substring 33 (stringLength (baseNameOf drv)) (baseNameOf drv);
 
-  rewriteHashes = drv: hashes: runCommandLocal (drvName drv) { nixStore = "${nix.out}/bin/nix-store"; } ''
-    $nixStore --dump ${drv} | sed 's|${baseNameOf drv}|'$(basename $out)'|g' | sed -e ${
-      concatStringsSep " -e " (mapAttrsToList (name: value:
-        "'s|${baseNameOf name}|${baseNameOf value}|g'"
-      ) hashes)
-    } | $nixStore --restore $out
-  '';
+  rewriteHashes = drv: rewrites:
+    if rewrites == { } then
+      drv
+    else
+      runCommandLocal (drvName drv) { nixStore = "${nix}/bin/nix-store"; } ''
+        $nixStore --dump ${drv} | sed 's|${baseNameOf drv}|'$(basename $out)'|g' | sed -e ${
+          concatStringsSep " -e " (mapAttrsToList (name: value:
+            "'s|${baseNameOf name}|${baseNameOf value}|g'"
+          ) rewrites)
+        } | $nixStore --restore $out
+      '';
 
-  rewrittenDeps = listToAttrs [ {name = discard (toString oldDependency); value = newDependency;} ];
+  # an empty `replacements` is equivalent to replacing `drv` with itself, so:
+  targetDerivations = [ drv ] ++ map (x: x.newDependency) replacements;
+  rewrittenDeps = listToAttrs (map (drv: { name = discard drv; value = referencesOf drv; }) targetDerivations);
+  relevantReferences = mergeAttrsList (attrValues rewrittenDeps);
 
-  rewriteMemo = listToAttrs (map
-    (drv: { name = discard (toString drv);
-            value = rewriteHashes (builtins.storePath drv)
-              (filterAttrs (n: v: builtins.elem (builtins.storePath (discard (toString n))) (referencesOf drv)) rewriteMemo);
-          })
-    (filter dependsOnOld (builtins.attrNames references))) // rewrittenDeps;
+  /**
+    Recursively construct the rewritten derivation, starting from the
+    `relevantReferences`.
+  */
+  rewriteMemo =
+    # Mind the order of how the three attrsets are merged here.
+    # The order of precedence needs to be "explicitly specified replacements" > "rewrite exclusion (cutoffPackages)" > "rewrite".
+    # So the attrset merge order is the opposite.
+    mapAttrs (drv: references:
+      let
+        rewrittenReferences =
+          filter (dep: dep != drv && toString rewriteMemo.${dep} != dep)
+          references;
+        rewrites = listToAttrs (map (reference: {
+          name = reference;
+          value = rewriteMemo.${reference};
+        }) rewrittenReferences);
+      in
+      rewriteHashes storePathOrKnownDerivationMemo.${drv} rewrites
+    ) relevantReferences // listToAttrs (map (drv: {
+      name = discard drv;
+      value = storePathOrKnownDerivationMemo.${discard drv};
+    }) cutoffPackages) // listToAttrs (map ({ oldDependency, newDependency }: {
+      name = discard oldDependency;
+      value = rewriteMemo.${discard newDependency};
+    }) relevantReplacements);
 
-  drvHash = discard (toString drv);
-in assert (stringLength (drvName (toString oldDependency)) == stringLength (drvName (toString newDependency)));
-rewriteMemo.${drvHash} or (warn "replace-dependency.nix: Derivation ${drvHash} does not depend on ${discard (toString oldDependency)}" drv)
+  # Make sure a derivation is returned even when no replacements are actually applied.
+  # Yes, even in the stupid edge case where the root derivation itself is replaced.
+  storePathOrKnownDerivationMemo = mapAttrs (drv: _references:
+    # builtins.storePath does not work in pure evaluation mode, even though it is not impure.
+    # This reimplementation in Nix works as long as the path is already allowed in the evaluation state.
+    # This is always the case here, because all paths come from the closure of the original derivation.
+    appendContext drv { ${drv}.path = true; }) relevantReferences // listToAttrs
+    (map (drv: {
+      name = discard drv;
+      value = drv;
+    }) targetDerivations);
+
+  relevantReplacements = filter ({ oldDependency, newDependency }:
+    if toString oldDependency == toString newDependency then
+      warn
+      "replaceDependencies: attempting to replace dependency ${oldDependency} of ${drv} with itself"
+      # Attempting to replace a dependency by itself is completely useless, and would only lead to infinite recursion.
+      # Hence it must not be attempted to apply this replacement in any case.
+      false
+    else if !hasAttr (discard oldDependency)
+    rewrittenDeps.${discard drv} then
+      warn "replaceDependencies: ${drv} does not depend on ${oldDependency}"
+      # Handle the corner case where one of the other replacements introduces the dependency.
+      # It would be more correct to not show the warning in this case, but the added complexity is probably not worth it.
+      true
+    else
+      true) replacements;
+
+in assert all ({ oldDependency, newDependency }: stringLength oldDependency == stringLength newDependency) replacements;
+rewriteMemo.${discard drv}
