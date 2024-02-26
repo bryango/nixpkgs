@@ -121,4 +121,10 @@ in {
     }) ''
       got new dependency 1
       got new dependency 2'';
+
+  validate-reference-graph-implementations =
+    (pkgs.callPackage ./reference-graphs.nix { })
+      # randomly-chosen, complicated package to test the reference graph:
+      pkgs.gimp
+  ;
 }
