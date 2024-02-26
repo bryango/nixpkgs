@@ -1348,6 +1348,8 @@ with pkgs;
 
   closureInfo = callPackage ../build-support/closure-info.nix { };
 
+  closureReferences = callPackage ../build-support/closure-references.nix { };
+
   sensible-utils = callPackage ../tools/misc/sensible-utils { };
 
   serverspec = callPackage ../tools/misc/serverspec { };
