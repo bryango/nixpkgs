@@ -1,4 +1,4 @@
-{ lib, runCommandLocal, replaceDirectDependencies }:
+{ lib, runCommandLocal, replaceDirectDependencies, closureReferences }:
 
 # Replace some dependencies in the requisites tree of drv, propagating the change all the way up the tree, even within other replacements, without a full rebuild.
 # This can be useful, for example, to patch a security hole in libc and still use your system safely without rebuilding the world.
@@ -40,29 +40,12 @@ let
   toContextlessString = x: unsafeDiscardStringContext (toString x);
   warn = if verbose then trace else (x: y: y);
 
-  referencesOf = drv:
-    import (runCommandLocal "references.nix" {
-      exportReferencesGraph = [ "graph" drv ];
-    } ''
-      (echo {
-      while read path
-      do
-          echo "  \"$path\" = ["
-          read count
-          read count
-          while [ "0" != "$count" ]
-          do
-              read ref_path
-              if [ "$ref_path" != "$path" ]
-              then
-                  echo "    \"$ref_path\""
-              fi
-              count=$(($count - 1))
-          done
-          echo "  ];"
-      done < graph
-      echo }) > $out
-    '').outPath;
+  referencesOf = drv: with builtins;
+    lib.pipe (closureReferences { rootPaths = [ drv ]; }).outPath [
+      readFile
+      unsafeDiscardStringContext
+      toJSON
+    ];
 
   knownDerivations = [ drv ]
     ++ map ({ newDependency, ... }: newDependency) replacements;
