@@ -106,6 +106,7 @@
 , "ganache"
 , "gatsby-cli"
 , "@gitbeaker/cli"
+, "grammarly-languageserver"
 , "graphql"
 , "graphql-cli"
 , "graphql-language-service-cli"
