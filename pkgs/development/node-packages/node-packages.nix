@@ -4,6 +4,44 @@
 
 let
   sources = {
+    # The following is some manually added sources for grammarly-languageserver
+    "@grammarly/sdk-1.11.0" = {
+      name = "_at_grammarly_slash_sdk";
+      packageName = "@grammarly/sdk";
+      version = "1.11.0";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/@grammarly/sdk/-/sdk-1.11.0.tgz";
+        sha512 = "/LDNozZ+6qTS0yqMXo/ki6yJqTVx2s6ncOM/m/t4PjqeXrN8ejTwoiNDoDVZq18bsHjZBPP4o03M2goFYWJCHA==";
+      };
+    };
+    "grammarly-richtext-encoder-0.0.0" = {
+      name = "grammarly-richtext-encoder";
+      packageName = "grammarly-richtext-encoder";
+      version = "0.0.0";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/grammarly-richtext-encoder/-/grammarly-richtext-encoder-0.0.0.tgz";
+        sha512 = "vH2bsdjoJLQ33sZCquG1GyiFyK+Qk8n04NzqHLWTnY9l8lg08AGUyA8ZgeZHdi3I81nrdcGO13V9qYyP6sdshw==";
+      };
+    };
+    "idb-keyval-6.2.1" = {
+      name = "idb-keyval";
+      packageName = "idb-keyval";
+      version = "6.2.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/idb-keyval/-/idb-keyval-6.2.1.tgz";
+        sha512 = "8Sb3veuYCyrZL+VBt9LJfZjLUPWVvqn8tG28VqYNFCo43KHcKuq+b4EiXGeuaLAQWL2YmyDgMp2aSpH9JHsEQg==";
+      };
+    };
+    "inversify-6.0.2" = {
+      name = "inversify";
+      packageName = "inversify";
+      version = "6.0.2";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/inversify/-/inversify-6.0.2.tgz";
+        sha512 = "i9m8j/7YIv4mDuYXUAcrpKPSaju/CIly9AHK5jvCBeoiM/2KEsuCQTTP+rzSWWpLYWRukdXFSl6ZTk2/uumbiA==";
+      };
+    };
+    # This is the end of the manually added grammarly-languageserver dependencies.
     "@0no-co/graphql.web-1.0.7" = {
       name = "_at_0no-co_slash_graphql.web";
       packageName = "@0no-co/graphql.web";
@@ -70979,7 +71017,7 @@ in
       sources."vscode-languageserver-protocol-3.16.0"
       sources."vscode-languageserver-textdocument-1.0.11"
       sources."vscode-languageserver-types-3.16.0"
-      sources."web-tree-sitter-0.20.5"
+      sources."web-tree-sitter-0.22.5"
       sources."webidl-conversions-3.0.1"
       sources."whatwg-url-5.0.0"
     ];
