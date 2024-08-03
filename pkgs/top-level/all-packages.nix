@@ -9853,6 +9853,9 @@ with pkgs;
   nodejs-slim = nodejs-slim_20;
   corepack = hiPrio corepack_20;
 
+  nodejs_16 = callPackage ../development/web/nodejs/v16.nix { };
+  nodejs-slim_16 = callPackage ../development/web/nodejs/v16.nix { enableNpm = false; };
+
   nodejs_18 = callPackage ../development/web/nodejs/v18.nix { };
   nodejs-slim_18 = callPackage ../development/web/nodejs/v18.nix { enableNpm = false; };
   corepack_18 = hiPrio (callPackage ../development/web/nodejs/corepack.nix { nodejs = nodejs_18; });
