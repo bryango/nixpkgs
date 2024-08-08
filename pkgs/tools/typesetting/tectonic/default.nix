@@ -16,20 +16,32 @@
 , openssl
 , pkg-config
 , icu
+, fetchpatch2
+, applyPatches
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "tectonic";
   version = "0.15.0";
 
-  src = fetchFromGitHub {
-    owner = "tectonic-typesetting";
-    repo = "tectonic";
-    rev = "tectonic@${version}";
-    sha256 = "sha256-xZHYiaQ8ASUwu0ieHIXcjRaH06SQoB6OR1y7Ok+FjAs=";
+  # src is patched up front before Cargo vendoring because patchPhase happens after it
+  src = applyPatches {
+    src = fetchFromGitHub {
+      owner = "tectonic-typesetting";
+      repo = "tectonic";
+      rev = "tectonic@${version}";
+      sha256 = "sha256-xZHYiaQ8ASUwu0ieHIXcjRaH06SQoB6OR1y7Ok+FjAs=";
+    };
+    patches = [
+      # fix build with rust 1.80
+      (fetchpatch2 {
+        url = "https://github.com/tectonic-typesetting/tectonic/commit/6b49ca8db40aaca29cb375ce75add3e575558375.patch";
+        hash = "sha256-i1L3XaSuBbsmgOSXIWVqr6EHlHGs8A+6v06kJ3C50sk=";
+      })
+    ];
   };
 
-  cargoHash = "sha256-niMgb4zsTWHw5yaa4kJOZzpOzO5gMG4k3cTHwSV+wmY=";
+  cargoHash = "sha256-Zn+xU6NJOY+jDYrSGsbYGAVqprQ6teEdNvlTNDXuzKs=";
 
   nativeBuildInputs = [ pkg-config ];
 
