@@ -10,6 +10,7 @@
 , firefox-unwrapped
 , firefox-esr-unwrapped
 , mesa
+, fetchpatch2
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -22,6 +23,16 @@ rustPlatform.buildRustPackage rec {
     rev = "v${version}";
     hash = "sha256-XTGHHD5Qw3mr+lkPKOXyqb0K3sEENW8Sf0n9mtrFFXI=";
   };
+
+  patches = [
+    (fetchpatch2 {
+      # open PR: https://github.com/mozilla/cbindgen/pull/1010
+      # see also: https://github.com/NixOS/nixpkgs/pull/298108
+      name = "1010-fix-test-failures-due-to-CARGO_BUILD_TARGET";
+      url = "https://patch-diff.githubusercontent.com/raw/mozilla/cbindgen/pull/1010.patch";
+      hash = "sha256-vGMgOMZdC5UvaLOs8GsKh4Tqvj3SC0bgdXWwoMfcnog=";
+    })
+  ];
 
   cargoHash = "sha256-l4FgwXdibek4BAnqjWd1rLxpEwuMNjYgvo6X3SS3fRo=";
 
