@@ -91,23 +91,30 @@
 
   # See https://nixos.org/manual/nixpkgs/unstable/#tester-invalidateFetcherByDrvHash
   # or doc/build-helpers/testers.chapter.md
-  invalidateFetcherByDrvHash = f: args:
+  invalidateFetcherByDrvHash = f: args: testers.invalidateFetcher f (args // { customSalt = null; });
+
+  invalidateFetcher = f: { customSalt ? null, ... }@_args:
     let
+      args = lib.removeAttrs _args [ "customSalt" ];
       drvPath = (f args).drvPath;
-      # It's safe to discard the context, because we don't access the path.
-      salt = builtins.unsafeDiscardStringContext (lib.substring 0 12 (baseNameOf drvPath));
+      salt =
+        if customSalt != null then
+          customSalt
+        else
+          # It's safe to discard the context, because we don't access the path.
+          builtins.unsafeDiscardStringContext (lib.substring 0 12 (baseNameOf drvPath));
       # New derivation incorporating the original drv hash in the name
       salted = f (args // { name = "${args.name or "source"}-salted-${salt}"; });
       # Make sure we did change the derivation. If the fetcher ignores `name`,
-      # `invalidateFetcherByDrvHash` doesn't work.
+      # `invalidateFetcher` doesn't work.
       checked =
         if salted.drvPath == drvPath
-        then throw "invalidateFetcherByDrvHash: Adding the derivation hash to the fixed-output derivation name had no effect. Make sure the fetcher's name argument ends up in the derivation name. Otherwise, the fetcher will not be re-run when its implementation changes. This is important for testing."
+        then throw "invalidateFetcher: adding '${salt}' to the fixed-output derivation name had no effect. Make sure the fetcher's name argument ends up in the derivation name. Otherwise, the fetcher will not be re-run when its implementation changes. This is important for testing."
         else salted;
     in checked;
 
   # See https://nixos.org/manual/nixpkgs/unstable/#tester-runCommand
-  runCommand = testers.invalidateFetcherByDrvHash (
+  runCommand = testers.invalidateFetcher (
     {
       hash ? pkgs.emptyFile.outputHash,
       name,
