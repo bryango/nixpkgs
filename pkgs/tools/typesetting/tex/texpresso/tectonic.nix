@@ -1,5 +1,5 @@
-{ tectonic-unwrapped, fetchFromGitHub }:
-tectonic-unwrapped.override (old: {
+{ tectonic, fetchFromGitHub }:
+tectonic.unwrapped.override (old: {
   rustPlatform = old.rustPlatform // {
     buildRustPackage =
       args:
