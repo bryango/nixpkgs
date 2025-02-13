@@ -12,7 +12,9 @@ symlinkJoin {
 
   nativeBuildInputs = [ makeBinaryWrapper ];
 
+  recurseForDerivations = true;
   passthru = {
+    recurseForDerivations = true;
     unwrapped = callPackage ./unwrapped.nix { };
     biber = callPackage ./biber.nix { };
     tests = callPackage ./tests.nix { };
