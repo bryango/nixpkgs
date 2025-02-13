@@ -53,6 +53,14 @@ symlinkJoin {
 
   meta = tectonic.unwrapped.meta // {
     description = "Tectonic TeX/LaTeX engine, wrapped with a compatible biber";
+    longDescription = ''
+      ${tectonic.unwrapped.longDescription or ""}
+
+      Note that:
+      - `tectonic` by default provides `tectonic` bundled with the compatible `biber`
+      - `tectonic.unwrapped` provides the unwrapped `tectonic` package
+      - `tectonic.biber` provides the compatible `biber` executable for `tectonic`
+    '';
     maintainers = with lib.maintainers; [
       doronbehar
       bryango
