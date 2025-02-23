@@ -16,14 +16,14 @@ tectonic-unwrapped.overrideAttrs (
       fetchSubmodules = true;
     };
     useFetchCargoVendor = true;
-    cargoHash = "sha256-mqhbIv5r/5EDRDfP2BymXv9se2NCKxzRGqNqwqbD9A0=";
+    cargoHash = "sha256-Anok84At3SlnHRPRxYLVbhnAGI8EwxGywg34NYBNMSM=";
     # rebuild cargoDeps by hand because `.overrideAttrs cargoHash`
     # does not reconstruct cargoDeps (a known limitation):
     cargoDeps = rustPlatform.fetchCargoVendor {
       inherit (finalAttrs) src;
       name = "${finalAttrs.pname}-${finalAttrs.version}";
       hash = finalAttrs.cargoHash;
-      patches = finalAttrs.cargoPatches;
+      patches = finalAttrs.cargoPatches or [ ];
     };
     # binary has a different name, bundled tests won't work
     doCheck = false;

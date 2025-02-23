@@ -16,7 +16,6 @@
   openssl,
   pkg-config,
   icu,
-  fetchpatch2,
 }:
 
 let
@@ -31,35 +30,18 @@ in
 
 buildRustPackage rec {
   pname = "tectonic";
-  version = "0.15.0";
+  # https://github.com/tectonic-typesetting/tectonic/issues/1263
+  version = "0.15.0-unstable-2025-02-21";
 
   src = fetchFromGitHub {
     owner = "tectonic-typesetting";
     repo = "tectonic";
-    rev = "tectonic@${version}";
-    sha256 = "sha256-dZnUu0g86WJIIvwMgdmwb6oYqItxoYrGQTFNX7I61Bs=";
+    rev = "c2ae25ff1facd9e9cce31b48944b867773f709ec";
+    sha256 = "sha256-cDCJ1Tu2lA4KvN2EBUtT0MvMtkejd8YAoNRkNeoreEc=";
   };
 
-  patches = [
-    (fetchpatch2 {
-      # https://github.com/tectonic-typesetting/tectonic/pull/1155
-      name = "1155-fix-endless-reruns-when-generating-bbl";
-      url = "https://github.com/tectonic-typesetting/tectonic/commit/fbb145cd079497b8c88197276f92cb89685b4d54.patch";
-      hash = "sha256-6FW5MFkOWnqzYX8Eg5DfmLaEhVWKYVZwodE4SGXHKV0=";
-    })
-  ];
-
-  cargoPatches = [
-    (fetchpatch2 {
-      # cherry-picked from https://github.com/tectonic-typesetting/tectonic/pull/1202
-      name = "1202-fix-build-with-rust-1_80-and-icu-75";
-      url = "https://github.com/tectonic-typesetting/tectonic/compare/19654bf152d602995da970f6164713953cffc2e6...6b49ca8db40aaca29cb375ce75add3e575558375.patch?full_index=1";
-      hash = "sha256-CgQBCFvfYKKXELnR9fMDqmdq97n514CzGJ7EBGpghJc=";
-    })
-  ];
-
   useFetchCargoVendor = true;
-  cargoHash = "sha256-OMa89riyopKMQf9E9Fr7Qs4hFfEfjnDFzaSWFtkYUXE=";
+  cargoHash = "sha256-dBthzRS+9wqKCwmo5cY/ynTdfIPK3QCsbZ2vAQ8q7aM=";
 
   nativeBuildInputs = [ pkg-config ];
 
@@ -85,6 +67,13 @@ buildRustPackage rec {
     '';
 
   doCheck = true;
+  preCheck = ''
+    export HOME="$(mktemp -d)"
+  '';
+  checkFlags = [
+    # https://github.com/tectonic-typesetting/tectonic/issues/1263
+    "--skip=tests::no_segfault_after_failed_compilation"
+  ];
 
   meta = {
     description = "Modernized, complete, self-contained TeX/LaTeX engine, powered by XeTeX and TeXLive";
