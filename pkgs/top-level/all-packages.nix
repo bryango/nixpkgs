@@ -4696,6 +4696,11 @@ with pkgs;
   runtimeShellPackage = bashNonInteractive;
 
   bash = callPackage ../shells/bash/5.nix { };
+  bashNonInteractive52 = lowPrio (
+    callPackage ../shells/bash52/5.nix {
+      interactive = false;
+    }
+  );
   bashNonInteractive = lowPrio (
     callPackage ../shells/bash/5.nix {
       interactive = false;
@@ -9231,6 +9236,8 @@ with pkgs;
   );
 
   readline70 = callPackage ../development/libraries/readline/7.0.nix { };
+
+  readline82 = callPackage ../development/libraries/readline82/8.2.nix { };
 
   readline = callPackage ../development/libraries/readline/8.3.nix { };
 
