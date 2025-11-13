@@ -7,12 +7,12 @@
 tectonic-unwrapped.overrideAttrs (
   finalAttrs: prevAttrs: {
     pname = "texpresso-tonic";
-    version = "0.15.0-unstable-2025-02-22";
+    version = "0-unstable-2025-08-11";
     src = fetchFromGitHub {
       owner = "let-def";
       repo = "tectonic";
-      rev = "bf124880d9901e12e2efe59df4818a921fb1398c";
-      hash = "sha256-VydcTdcX0Qn0jZrt145bA8L5HxgXk6WDjPNERdjB83E=";
+      rev = "be0a9543600ab3a98f6ae6c37047522c09c2a02e";
+      hash = "sha256-u1t2UuQ2Oumjpjkb4W+RvybmFPPBxbYRWrSWJuqpZIc=";
     };
 
     cargoHash = "sha256-mX9DsucLbls1w0ULQ6kEHel/u1PZjQPcGZK3pjN7RVE=";

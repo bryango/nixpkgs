@@ -32,16 +32,16 @@ in
 buildRustPackage rec {
   pname = "tectonic";
   # https://github.com/tectonic-typesetting/tectonic/issues/1263
-  version = "0.15.0-unstable-2025-08-14";
+  version = "0.15.0-unstable-2025-10-06";
 
   src = fetchFromGitHub {
     owner = "tectonic-typesetting";
     repo = "tectonic";
-    rev = "90466885a0432cdf8ee1366f608acd46302c3115";
-    sha256 = "sha256-G7uMj49Avip6GCEWr35g3zH1jd7+lPdc1DZVzjgNGJo=";
+    rev = "42171eeade1641d846fef03566d1e26e9c6e3004";
+    sha256 = "sha256-PEDhyDJHFGN2zGPx2x5H7KYUtwX7F/04Dw2qzQyiOSo=";
   };
 
-  cargoHash = "sha256-wb+o9HrXWxrNra5XtKHRdxuigSiicP5KhnJ0LFud5sg=";
+  cargoHash = "sha256-0ks9JcVq1dRQZd7E5DdcZiI36RL2xgRHIGRkYDTRaps=";
 
   nativeBuildInputs = [ pkg-config ];
 

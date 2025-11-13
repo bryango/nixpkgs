@@ -18,13 +18,13 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "texpresso";
-  version = "0-unstable-2025-06-03";
+  version = "0.1-unstable-2025-08-13";
 
   src = fetchFromGitHub {
     owner = "let-def";
     repo = "texpresso";
-    rev = "9c8d75eec6b60d7ab93addc19e83b934114c8c1c";
-    hash = "sha256-ltE4tGM/oIMqxeP+XSgSxbKDTPl1fYcSjTpnjOUoW9c=";
+    rev = "6073a336dd67e5d4fde0ded4b33580920de7f69d";
+    hash = "sha256-J+1OtrLUP9P3diUcndlQnXp70dfjAfc39ZYcIVr5/hI=";
   };
 
   postPatch = ''
