@@ -74,7 +74,7 @@ stdenv.mkDerivation (finalAttrs: {
 
       tectonic_version="$(curl -s "https://api.github.com/repos/let-def/texpresso/contents/tectonic" | jq -r '.sha')"
       nix-update --version=branch texpresso
-      nix-update --version=branch=$tectonic_version texpresso.tectonic
+      nix-update --version=branch=$tectonic_version --version-regex="(0-unstable-.*)" texpresso.tectonic
     '';
   };
 
