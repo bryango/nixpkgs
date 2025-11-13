@@ -16,8 +16,7 @@
   openssl,
   pkg-config,
   icu,
-  unstableGitUpdater,
-  writeScript,
+  nix-update-script,
 }:
 
 let
@@ -75,21 +74,12 @@ buildRustPackage rec {
     "--skip=tests::no_segfault_after_failed_compilation"
   ];
 
-  passthru.updateScript = writeScript "update-tectonic" ''
-    #!/usr/bin/env nix-shell
-    #!nix-shell -i bash -p nix-update
-
-    set -euo pipefail
-    set -x
-
-    ${lib.concatStringsSep " " (unstableGitUpdater rec {
-      tagFormat = "${tagPrefix}*";
-      tagPrefix = "tectonic@";
-      branch = "continuous";
-    })}
-
-    nix-update --version=skip
-  '';
+  passthru.updateScript = nix-update-script {
+    extraArgs = [
+      "--version=branch=continuous"
+      "--version-regex=tectonic@(.*)"
+    ];
+  };
 
   meta = {
     description = "Modernized, complete, self-contained TeX/LaTeX engine, powered by XeTeX and TeXLive";
