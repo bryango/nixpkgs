@@ -2,7 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  cmake,
+  fetchpatch2,
   boost,
   gtest,
   llvmPackages,
@@ -136,6 +136,21 @@ in
 
       sourceRoot = "${common.src.name}/nixd";
 
+      patches = [
+        # Backport https://github.com/nix-community/nixd/pull/885
+        (fetchpatch2 {
+          name = "nixd-static-llvm-cli-fix.patch";
+          url = "https://github.com/nix-community/nixd/commit/2d9ba164379145161cd9c1f2422696b5d6f680ed.diff?full_index=1";
+          relative = "nixd";
+          excludes = [
+            "default.nix"
+            "tools/nixd/test/cli-options.md"
+            "tools/nixd/test/cli-options.py"
+          ];
+          hash = "sha256-12B92Hz7Egvy0MiYryAg0VCQnOJ/aYH6kVfwZZ9/JiE=";
+        })
+      ];
+
       buildInputs = [
         nixComponents.nix-main
         nixComponents.nix-expr
@@ -149,10 +164,6 @@ in
         libxml2
         zlib
       ];
-
-      nativeBuildInputs = common.nativeBuildInputs ++ [ cmake ];
-
-      mesonFlags = [ (lib.mesonBool "llvm_static" true) ];
 
       disallowedRequisites = [ (lib.getLib llvmPackages.llvm) ];
 
